@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio to SRT Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #1f2937;
+            --error-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .container {
+            background: var(--glass-bg);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="file"]:hover {
+            border-color: var(--primary-color);
+            background-color: #f1f5f9;
+        }
+
+        select {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background-color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.5em;
+        }
+
+        select:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .note {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        #error-message {
+            color: var(--error-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+            padding: 0.5rem;
+            background-color: #fef2f2;
+            border-radius: 8px;
+            border: 1px solid #fee2e2;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Audio to SRT</h1>
+        <p class="subtitle">Transform your audio into subtitles instantly</p>
+
+        <form id="uploadForm">
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" name="file" accept="audio/*,video/*" required>
+            </div>
+
+            <select name="language" id="languageSelect">
+                <option value="en" selected>English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="nl">Dutch</option>
+                <option value="pt">Portuguese</option>
+                <option value="ja">Japanese</option>
+                <option value="zh">Chinese</option>
+                <option value="ru">Russian</option>
+            </select>
+
+            <div id="error-message"></div>
+
+            <button type="submit" id="submitBtn">
+                <span class="spinner" id="spinner"></span>
+                <span id="btnText">Convert to SRT</span>
+            </button>
+        </form>
+
+        <p class="note">
+            Supported formats: MP3, WAV, FLAC, MP4, MKV, MOV, M4A, OGG, WEBM.<br>
+            Large files may take a few minutes to process.
+        </p>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+        const errorMessage = document.getElementById('error-message');
+
+        const ALLOWED_EXTENSIONS = ['mp3', 'wav', 'flac', 'mp4', 'mkv', 'mov', 'm4a', 'ogg', 'webm'];
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const extension = file.name.split('.').pop().toLowerCase();
+                if (!ALLOWED_EXTENSIONS.includes(extension)) {
+                    showError(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
+                    this.value = ''; // Clear input
+                }
+            }
+        });
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const file = fileInput.files[0];
+            if (!file) {
+                showError('Please select a file first.');
+                return;
+            }
+
+            // UI Loading State
+            submitBtn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = 'Transcribing...';
+            errorMessage.style.display = 'none';
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Transcription failed');
+                }
+
+                // Handle successful download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                // Get filename from header or default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'output.srt';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch.length === 2)
+                        filename = filenameMatch[1];
+                }
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                // Reset UI
+                submitBtn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Convert to SRT';
+                fileInput.value = ''; // Optional: clear file after success
+            }
+        });
+    </script>
+</body>
+
+</html>
