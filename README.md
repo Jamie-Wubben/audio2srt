@@ -2,11 +2,13 @@
 
 ![Audio2SRT Screenshot](data/screenshot.png)
 
-A modern web application that converts audio and video files into SRT subtitles using OpenAI's Whisper model.
+A modern web application that converts audio and video files into SRT subtitles using OpenAI's Whisper model, optimized with faster-whisper for high-performance CPU inference.
 
 ## Features
 
 -   **High-Quality Transcription**: Uses OpenAI's Whisper model ("base") for accurate speech-to-text conversion.
+-   **Optimized Performance**: Powered by faster-whisper with 8-bit quantization for 4-5x faster transcription on CPU.
+-   **Performance Profiling**: Built-in time logging for each processing step to monitor performance.
 -   **Modern UI**: A stunning, responsive interface with glassmorphism design.
 -   **File Validation**: Robust client-side and server-side validation to ensure only supported files are processed.
 -   **Loading Feedback**: Visual indicators during the transcription process.
@@ -64,8 +66,27 @@ A modern web application that converts audio and video files into SRT subtitles 
 ## How it Works
 
 1.  **Upload**: Select an audio or video file from your device.
-2.  **Transcribe**: Click the "Convert to SRT" button. The file is securely uploaded and processed using the Whisper model.
+2.  **Transcribe**: Click the "Convert to SRT" button. The file is securely uploaded and processed using the faster-whisper model with CPU optimization and 8-bit quantization.
 3.  **Download**: Once transcription is complete, the `.srt` file is automatically downloaded to your device.
+
+## Performance
+
+The application uses `faster-whisper`, a reimplementation of Whisper using CTranslate2, which provides:
+
+-   **4-5x faster** inference compared to the standard Whisper implementation
+-   **Lower memory usage** through 8-bit quantization (`int8`)
+-   **CPU-optimized** for running on systems without GPU
+-   **Same accuracy** as the original Whisper model
+
+### Profiling
+
+The application includes built-in performance logging for each step:
+-   File upload time
+-   Transcription time
+-   SRT file generation time
+-   File cleanup time
+
+Logs are visible in the console output with the `[PROFILING]` prefix.
 
 ## Acknowledgments
 

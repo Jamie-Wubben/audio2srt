@@ -1,9 +1,12 @@
 import os
-import whisper
+import time
+from faster_whisper import WhisperModel
+import logging
 from flask import Flask, render_template, request, send_file, after_this_request
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['OUTPUT_FOLDER'] = 'outputs'
 app.config['ALLOWED_EXTENSIONS'] = {'mp3', 'wav', 'flac', 'mp4', 'mkv', 'mov', 'm4a', 'ogg', 'webm'}
@@ -12,8 +15,10 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 # Load the model globally to avoid reloading it on every request
-# Using 'base' model as per plan to ensure it runs on typical hardware
-model = whisper.load_model("base")
+# Using 'base' model with CPU and int8 quantization for optimal performance
+# compute_type="int8" enables 8-bit quantization for faster inference
+# device="cpu" ensures it runs on CPU
+model = WhisperModel("base", device="cpu", compute_type="int8")
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -21,24 +26,30 @@ def allowed_file(filename):
 
 def transcribe_with_whisper(input_file, output_dir, language):
     # Perform transcription
-    result = model.transcribe(
+    transcribe_start = time.time()
+    # faster-whisper returns a generator of segments and info
+    segments, info = model.transcribe(
         input_file,
         language=language,
-        word_timestamps=True,
+        word_timestamps=True
     )
-    
-    # Extract the transcription text and word timestamps
-    segments = result["segments"]
+    # Convert generator to list to allow iteration
+    segments = list(segments)
+    transcribe_duration = time.time() - transcribe_start
+    app.logger.info(f"[PROFILING] Transcribing file took: {transcribe_duration:.2f} seconds")
+    app.logger.info(f"[PROFILING] Detected language: {info.language} with probability {info.language_probability:.2f}")
     
     # Save to an SRT file
     srt_filename = "output.srt"
     srt_file = os.path.join(output_dir, srt_filename)
     
+    srt_save_start = time.time()
     with open(srt_file, "w", encoding="utf-8") as f:
         for idx, segment in enumerate(segments):
-            start_time = segment["start"]
-            end_time = segment["end"]
-            text = segment["text"]
+            # faster-whisper uses attributes instead of dictionary keys
+            start_time = segment.start
+            end_time = segment.end
+            text = segment.text
             
             # Convert start and end times to SRT time format (HH:MM:SS,MS)
             start_time_srt = f"{int(start_time // 3600):02}:{int((start_time % 3600) // 60):02}:{int(start_time % 60):02},{int((start_time * 1000) % 1000):03}"
@@ -48,6 +59,8 @@ def transcribe_with_whisper(input_file, output_dir, language):
             f.write(f"{idx + 1}\n")
             f.write(f"{start_time_srt} --> {end_time_srt}\n")
             f.write(f"{text}\n\n")
+    srt_save_duration = time.time() - srt_save_start
+    app.logger.info(f"[PROFILING] Saving to SRT file took: {srt_save_duration:.2f} seconds")
     
     return srt_file
 
@@ -72,7 +85,12 @@ def transcribe():
     if file:
         filename = secure_filename(file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save uploaded file
+        save_start = time.time()
         file.save(input_path)
+        save_duration = time.time() - save_start
+        app.logger.info(f"[PROFILING] Saving uploaded file took: {save_duration:.2f} seconds")
         
         try:
             srt_path = transcribe_with_whisper(input_path, app.config['OUTPUT_FOLDER'], language)
@@ -80,8 +98,11 @@ def transcribe():
             @after_this_request
             def remove_files(response):
                 try:
+                    remove_start = time.time()
                     os.remove(input_path)
                     os.remove(srt_path)
+                    remove_duration = time.time() - remove_start
+                    app.logger.info(f"[PROFILING] Removing files took: {remove_duration:.2f} seconds")
                 except Exception as e:
                     app.logger.error(f"Error removing files: {e}")
                 return response
