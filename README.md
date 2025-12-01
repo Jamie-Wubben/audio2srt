@@ -91,3 +91,7 @@ Logs are visible in the console output with the `[PROFILING]` prefix.
 ## Acknowledgments
 
 This project was inspired by [transcribe_with_whisper](https://github.com/Tonkyboy/transcribe_with_whisper).
+
+## Connect With Me
+
+Enjoyed this project? Follow me on [LinkedIn](https://www.linkedin.com/in/jamie-wubben/) for more innovative projects and updates!
