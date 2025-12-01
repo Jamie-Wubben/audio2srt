@@ -262,6 +262,117 @@
         .social-links a:hover svg {
             fill: white;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            animation: slideUp 0.4s ease;
+            text-align: center;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.5rem;
+            line-height: 1;
+            transition: color 0.2s ease;
+            width: auto;
+        }
+
+        .modal-close:hover {
+            color: #4b5563;
+            background: none;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .modal-emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-text {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .linkedin-btn {
+            background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 119, 181, 0.3);
+        }
+
+        .linkedin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 119, 181, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
@@ -321,6 +432,20 @@
                     <path
                         d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                 </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal Popup -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+            <div class="modal-emoji">🤖</div>
+            <p class="modal-text" id="modalText">I've got the heavy lifting—take a sec, read this post, and drop a like!
+            </p>
+            <a href="https://www.linkedin.com/posts/jamie-wubben_ai-programming-futureofwork-activity-7399571504486617088-vrM0"
+                target="_blank" rel="noopener noreferrer" class="linkedin-btn" id="linkedinBtn">
+                📖 Read the Post
             </a>
         </div>
     </div>
@@ -422,6 +547,29 @@
             }
         });
 
+        // Modal elements
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalClose = document.getElementById('modalClose');
+        const modalText = document.getElementById('modalText');
+        const linkedinBtn = document.getElementById('linkedinBtn');
+
+        // Close modal
+        modalClose.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+
+        // Close modal when clicking outside
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
+            }
+        });
+
+        // Update text when LinkedIn button is clicked
+        linkedinBtn.addEventListener('click', () => {
+            modalText.textContent = 'Thanks for checking it out! Your file will be ready soon. 🚀';
+        });
+
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -430,6 +578,9 @@
                 showError('Please select a file first.');
                 return;
             }
+
+            // Show modal immediately
+            modalOverlay.classList.add('active');
 
             // UI Loading State
             submitBtn.disabled = true;
@@ -469,14 +620,20 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
 
+                // Close modal after successful download
+                modalOverlay.classList.remove('active');
+
             } catch (error) {
                 showError(error.message);
+                modalOverlay.classList.remove('active');
             } finally {
                 // Reset UI
                 submitBtn.disabled = false;
                 spinner.style.display = 'none';
                 btnText.textContent = 'Convert to SRT';
                 fileInput.value = ''; // Optional: clear file after success
+                // Reset modal text for next time
+                modalText.textContent = "I've got the heavy lifting—take a sec, read this post, and drop a like!";
             }
         });
     </script>
