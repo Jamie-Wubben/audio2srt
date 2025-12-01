@@ -65,24 +65,66 @@
 
         .file-input-wrapper {
             position: relative;
-            overflow: hidden;
-            display: inline-block;
+            width: 100%;
         }
 
         input[type="file"] {
+            display: none;
+        }
+
+        .drop-zone {
             width: 100%;
-            padding: 1rem;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
+            padding: 3rem 2rem;
+            border: 3px dashed #cbd5e1;
+            border-radius: 16px;
             background-color: #f8fafc;
             cursor: pointer;
             transition: all 0.3s ease;
             box-sizing: border-box;
+            text-align: center;
+            position: relative;
         }
 
-        input[type="file"]:hover {
+        .drop-zone:hover {
             border-color: var(--primary-color);
             background-color: #f1f5f9;
+            transform: scale(1.02);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--primary-color);
+            background-color: #eef2ff;
+            border-style: solid;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
+        }
+
+        .drop-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .drop-zone-text {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-subtext {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .file-name {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #e0e7ff;
+            border-radius: 8px;
+            color: var(--primary-color);
+            font-weight: 500;
+            display: none;
+            word-break: break-word;
         }
 
         select {
@@ -101,8 +143,7 @@
             background-size: 1.5em;
         }
 
-        select:focus,
-        input[type="file"]:focus {
+        select:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
@@ -186,6 +227,12 @@
         <form id="uploadForm">
             <div class="file-input-wrapper">
                 <input type="file" id="fileInput" name="file" accept="audio/*,video/*" required>
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon">📁</div>
+                    <div class="drop-zone-text">Click to browse or drag & drop</div>
+                    <div class="drop-zone-subtext">Upload your audio or video file</div>
+                    <div class="file-name" id="fileName"></div>
+                </div>
             </div>
 
             <select name="language" id="languageSelect">
@@ -218,6 +265,8 @@
     <script>
         const form = document.getElementById('uploadForm');
         const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const fileName = document.getElementById('fileName');
         const submitBtn = document.getElementById('submitBtn');
         const spinner = document.getElementById('spinner');
         const btnText = document.getElementById('btnText');
@@ -233,13 +282,79 @@
             }, 5000);
         }
 
+        function validateFile(file) {
+            if (!file) return false;
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (!ALLOWED_EXTENSIONS.includes(extension)) {
+                showError(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
+                return false;
+            }
+            return true;
+        }
+
+        function displayFileName(file) {
+            if (file) {
+                fileName.textContent = `📄 ${file.name}`;
+                fileName.style.display = 'block';
+            } else {
+                fileName.style.display = 'none';
+            }
+        }
+
+        // Click to browse
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
         fileInput.addEventListener('change', function () {
             const file = this.files[0];
             if (file) {
-                const extension = file.name.split('.').pop().toLowerCase();
-                if (!ALLOWED_EXTENSIONS.includes(extension)) {
-                    showError(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
+                if (validateFile(file)) {
+                    displayFileName(file);
+                } else {
                     this.value = ''; // Clear input
+                    displayFileName(null);
+                }
+            }
+        });
+
+        // Drag and drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-over');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                // Create a new FileList-like object
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+
+                if (validateFile(file)) {
+                    displayFileName(file);
+                } else {
+                    fileInput.value = '';
+                    displayFileName(null);
                 }
             }
         });
