@@ -3,6 +3,7 @@
 ![Audio2SRT Screenshot](data/screenshot.png)
 
 A modern web application that converts audio and video files into SRT subtitles using OpenAI's Whisper model, optimized with faster-whisper for high-performance CPU inference.
+Try it out [here](audio2srt.starlingstrategies.be).
 
 ## Features
 
