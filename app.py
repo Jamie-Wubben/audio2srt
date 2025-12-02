@@ -14,11 +14,10 @@ app.config['ALLOWED_EXTENSIONS'] = {'mp3', 'wav', 'flac', 'mp4', 'mkv', 'mov', '
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
-# Load the model globally to avoid reloading it on every request
-# Using 'base' model with CPU and int8 quantization for optimal performance
-# compute_type="int8" enables 8-bit quantization for faster inference
-# device="cpu" ensures it runs on CPU
-model = WhisperModel("base", device="cpu", compute_type="int8")
+# Point to the folder we created in the Dockerfile
+model_path = "/app/whisper_model" 
+
+model = WhisperModel(model_path, device="cpu", compute_type="int8")
 
 def allowed_file(filename):
     return '.' in filename and \

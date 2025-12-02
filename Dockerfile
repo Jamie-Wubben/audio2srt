@@ -13,10 +13,11 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-# Note: Installing torch 1.10.1 specifically for CPU to keep image size reasonable if possible, 
-# but standard pip install torch==1.10.1 might pull CUDA version. 
-# For simplicity and to match user request exactly, we just run pip install.
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Download the model
+COPY download_model.py .
+RUN python download_model.py
 
 # Copy the rest of the application
 COPY . .
