@@ -26,5 +26,9 @@ COPY . .
 EXPOSE 8080
 
 # Run the application
-CMD ["python", "-u", "app.py"]
-
+# bind: listen on PORT (google set's it)
+# workers: 1 (Important to prevent Out of Memory with AI models)
+# threads: 8 (Allows concurrent request handling)
+# timeout: 0 (Prevents Gunicorn from killing long transcriptions)
+# app:app -> This assumes your file is named 'app.py' and your Flask instance is named 'app'
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 8 --timeout 0 "app:app"
