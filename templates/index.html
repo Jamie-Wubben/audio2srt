@@ -407,7 +407,7 @@
 
             <div id="error-message"></div>
 
-            <button type="submit" id="submitBtn">
+            <button type="button" id="submitBtn">
                 <span class="spinner" id="spinner"></span>
                 <span id="btnText">Convert to SRT</span>
             </button>
@@ -570,8 +570,14 @@
             modalText.textContent = 'Thanks for checking it out! Your file will be ready soon. 🚀';
         });
 
-        form.addEventListener('submit', async function (e) {
+        submitBtn.addEventListener('click', async function (e) {
             e.preventDefault();
+
+            // Check form validity (for required fields)
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
 
             const file = fileInput.files[0];
             if (!file) {
